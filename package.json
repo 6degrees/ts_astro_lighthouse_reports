@@ -1,0 +1,28 @@
+{
+  "name": "ts_astro_lighthouse_reports",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "pnpm create:report && astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "create:report": "tsx src/lighthouse/runner.ts"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.7.0",
+    "@astrojs/tailwind": "^5.1.0",
+    "apexcharts": "^3.49.1",
+    "astro": "^4.11.0",
+    "chrome-launcher": "^1.1.2",
+    "dayjs": "^1.11.11",
+    "flowbite": "^2.3.0",
+    "lighthouse": "^12.1.0",
+    "p-limit": "^5.0.0",
+    "tailwindcss": "^3.4.4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.15.7",
+    "typescript": "^5.5.2"
+  }
+}

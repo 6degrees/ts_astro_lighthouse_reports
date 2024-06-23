@@ -1,0 +1,109 @@
+---
+const { key, title, value } = Astro.props;
+---
+
+<div class="h-full">
+    <h3 id={`title-${key}`} class="hidden">{title}</h3>
+    <div id={`radial-chart-${key}`}></div>
+    <span id={`value-${key}`} class="hidden">{value}</span>
+    <span id={`key-${key}`} data-trysomething="haha" class="hidden">{key}</span>
+    <span class="hidden" data-key={key}></span>
+</div>
+
+<script>
+    import ApexCharts from "apexcharts";
+
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOMContentLoaded");
+        const keyElement = document.querySelectorAll("span[data-key]");
+
+        keyElement.forEach((elementy) => {
+            console.log("Element", elementy);
+            const key = elementy.getAttribute("data-key");
+        const titleElement = document.getElementById(`title-${key}`);
+        const valueElement = document.getElementById(`value-${key}`);
+        const value = Number(valueElement.innerText) * 100;
+        const title = titleElement.innerText;
+
+        function getColorBasedOnValue(value) {
+            if (value >= 0 && value <= 49) {
+                return "#FF0000"; // Red for Poor
+            } else if (value >= 50 && value <= 89) {
+                return "#FFA500"; // Orange for Needs Improvement
+            } else if (value >= 90 && value <= 100) {
+                return "#00FF00"; // Green for Good
+            } else {
+                return "#000000"; // Default to black if out of range
+            }
+        }
+
+        const getChartOptions = () => {
+            return {
+                series: [Number(value)],
+
+                chart: {
+                    height: 200,
+                    type: "radialBar",
+                    offsetY: -10,
+                },
+                colors: [getColorBasedOnValue(value), "#16BDCA", "#FDBA8C", "#E74694"],
+
+                plotOptions: {
+                    radialBar: {
+                        track: {
+                            show: false,
+                        },
+                        startAngle: -135,
+                        endAngle: 135,
+                        dataLabels: {
+                            name: {
+                                fontSize: "32px",
+                                color: "#000000",
+                                offsetY: 120,
+                            },
+                            value: {
+                                offsetY: 76,
+                                fontSize: "22px",
+                                color: "#ffffff",
+                                formatter: function (val) {
+                                    return val + "%";
+                                },
+                            },
+                        },
+                    },
+                },
+
+                fill: {
+                    type: "gradient",
+                    gradient: {
+                        shade: "dark",
+                        shadeIntensity: 0.15,
+                        inverseColors: false,
+                        opacityFrom: 1,
+                        opacityTo: 1,
+                        stops: [0, 50, 65, 91],
+                    },
+                },
+
+                stroke: {
+                    dashArray: 3,
+                },
+
+                labels: [title],
+            };
+        };
+
+        console.log("Rendering Radial Chart");
+        console.log(document.getElementById(`radial-chart-${key}`));
+
+        const element = document.getElementById(`radial-chart-${key}`);
+        const apexChartsType = typeof ApexCharts;
+        console.log("ApexCharts type", apexChartsType);
+        if (element && typeof ApexCharts !== "undefined") {
+            const chart = new ApexCharts(element, getChartOptions());
+            chart.render();
+        }
+        });
+        
+    });
+</script>

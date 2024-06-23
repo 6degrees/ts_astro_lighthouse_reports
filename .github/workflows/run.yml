@@ -1,0 +1,46 @@
+name: Lighthouse and Astro Build
+
+on:
+  schedule:
+    - cron: '0 0 */2 * *'  # Runs every 2 days at midnight UTC
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Lighthouse
+        run: pnpm create:report
+        
+      - name: Install, build, and upload your site
+        uses: withastro/action@v0
+        with:
+            path: . 
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

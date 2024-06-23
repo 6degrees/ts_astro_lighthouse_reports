@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Report from '../components/Report.astro';
+import { websites } from '../lighthouse/websites.json';
+
+---
+<Layout title="Lighthouse Report">
+	<main>
+		<Header />
+		<div class=" grid gap-10 p-2">
+			
+			{websites.map((website) => (
+				<Report website={website} />
+			))}
+		</div>
+		
+	</main>
+</Layout>

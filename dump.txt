@@ -1,0 +1,411 @@
+// .github/workflows/run.yml
+name: Daily Lighthouse Report
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs at midnight UTC daily
+  push:
+    branches:
+      - main
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: |
+          pnpm install -g pnpm
+          pnpm install
+
+      - name: Run Lighthouse and send report
+        run: |
+          pnpm exec ts-node scripts/lighthouseReport.ts
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+
+
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+
+import tailwind from "@astrojs/tailwind";
+
+// https://astro.build/config
+export default defineConfig({
+  integrations: [tailwind()]
+});
+
+// package.json
+{
+  "name": "ts_astro_lighthouse_reports",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.7.0",
+    "@astrojs/tailwind": "^5.1.0",
+    "apexcharts": "^3.49.1",
+    "astro": "^4.11.0",
+    "chrome-launcher": "^1.1.2",
+    "dayjs": "^1.11.11",
+    "flowbite": "^2.3.0",
+    "lighthouse": "^12.1.0",
+    "p-limit": "^5.0.0",
+    "tailwindcss": "^3.4.4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.15.7",
+    "typescript": "^5.5.2"
+  }
+}
+
+// src/components/Chart.astro
+---
+const { key, title, value } = Astro.props;
+---
+
+<div class="h-full">
+    <h3 id={`title-${key}`} class="hidden">{title}</h3>
+    <div id={`radial-chart-${key}`}></div>
+    <span id={`value-${key}`} class="hidden">{value}</span>
+    <span id={`key-${key}`} data-trysomething="haha" class="hidden">{key}</span>
+    <span class="hidden" data-key={key}></span>
+</div>
+
+<script>
+    import ApexCharts from "apexcharts";
+
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOMContentLoaded");
+        const keyElement = document.querySelectorAll("span[data-key]");
+
+        keyElement.forEach((elementy) => {
+            console.log("Element", elementy);
+            const key = elementy.getAttribute("data-key");
+        const titleElement = document.getElementById(`title-${key}`);
+        const valueElement = document.getElementById(`value-${key}`);
+        const value = Number(valueElement.innerText) * 100;
+        const title = titleElement.innerText;
+
+        function getColorBasedOnValue(value) {
+            if (value >= 0 && value <= 49) {
+                return "#FF0000"; // Red for Poor
+            } else if (value >= 50 && value <= 89) {
+                return "#FFA500"; // Orange for Needs Improvement
+            } else if (value >= 90 && value <= 100) {
+                return "#00FF00"; // Green for Good
+            } else {
+                return "#000000"; // Default to black if out of range
+            }
+        }
+
+        const getChartOptions = () => {
+            return {
+                series: [Number(value)],
+
+                chart: {
+                    height: 200,
+                    type: "radialBar",
+                    offsetY: -10,
+                },
+                colors: [getColorBasedOnValue(value), "#16BDCA", "#FDBA8C", "#E74694"],
+
+                plotOptions: {
+                    radialBar: {
+                        track: {
+                            show: false,
+                        },
+                        startAngle: -135,
+                        endAngle: 135,
+                        dataLabels: {
+                            name: {
+                                fontSize: "32px",
+                                color: "#000000",
+                                offsetY: 120,
+                            },
+                            value: {
+                                offsetY: 76,
+                                fontSize: "22px",
+                                color: "#ffffff",
+                                formatter: function (val) {
+                                    return val + "%";
+                                },
+                            },
+                        },
+                    },
+                },
+
+                fill: {
+                    type: "gradient",
+                    gradient: {
+                        shade: "dark",
+                        shadeIntensity: 0.15,
+                        inverseColors: false,
+                        opacityFrom: 1,
+                        opacityTo: 1,
+                        stops: [0, 50, 65, 91],
+                    },
+                },
+
+                stroke: {
+                    dashArray: 3,
+                },
+
+                labels: [title],
+            };
+        };
+
+        console.log("Rendering Radial Chart");
+        console.log(document.getElementById(`radial-chart-${key}`));
+
+        const element = document.getElementById(`radial-chart-${key}`);
+        const apexChartsType = typeof ApexCharts;
+        console.log("ApexCharts type", apexChartsType);
+        if (element && typeof ApexCharts !== "undefined") {
+            const chart = new ApexCharts(element, getChartOptions());
+            chart.render();
+        }
+        });
+        
+    });
+</script>
+
+
+// src/components/Header.astro
+---
+
+---
+
+<header class="text-center">
+    <h1 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">Mother of all Lighthouse Reports</h1>
+    <p class="mb-6 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 dark:text-gray-400">Here you can check the latest Lighthouse reports for our websites.</p>
+</header>
+
+
+// src/components/Report.astro
+---
+//prop of website
+import dayjs from "dayjs";
+import Chart from "./Chart.astro";
+const { website } = Astro.props;
+const siteName = new URL(website.url).hostname;
+const audit = await import(`../../public/reports/${siteName}/live/report.json`);
+const date = dayjs(audit.fetchTime).format("YYYY-MMMM-DD");
+
+// convert audit.categories object to an array
+const audits = Object.keys(audit.categories).map((key) => {
+    return {
+        key,
+        ...audit.categories[key],
+    };
+});
+
+const finalScreenshot = audit.audits['final-screenshot'].details.data;
+
+
+---
+
+<div class="outline-dotted outline-white p-3 rounded-lg outline-1 text-white">
+    <header class="mb-2 flex justify-between align-top items-start">
+        <div>
+            <h2 class="text-2xl font-extrabold leading-none">{website.name}</h2>
+            <a href={website.url} class="text-blue-200">{website.url}</a>
+        </div>
+        <div class="text-slate-200 text-sm italic">Last fetched on {date}</div>
+    </header>
+    <div class="grid grid-cols-5 gap-2 items-center justify-center align-center">
+        {
+            audits.map((audit) => {
+                console.log(audit.id);
+                return (
+                    <div>
+                        <Chart key={`${audit.id}-${siteName}`} title={audit.title} value={audit.score} />
+                    </div>
+                );
+            })
+        }
+        <!-- lets print the audit.audit.final-screenshot -->
+         <div class="h-[200px] text-center center justify-center items-center"><img class="h-full inline-block" src={finalScreenshot} /></div>
+    </div>
+    <div class="text-center mt-4">
+        <a href={`/reports/${siteName}/live/report.html`} class="text-blue-200">View full report</a>
+    </div>
+</div>
+
+// src/env.d.ts
+/// <reference types="astro/client" />
+
+
+// src/layouts/Layout.astro
+---
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="Astro description" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body class="bg-slate-950 p-10 dark">
+		<slot />
+		<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js"></script>
+
+	</body>
+</html>
+
+
+// src/lighthouse/runner.ts
+import fs from 'fs';
+import lighthouse, { type Flags, type RunnerResult } from 'lighthouse';
+import * as chromeLauncher from 'chrome-launcher';
+import dayjs from 'dayjs';
+import path from 'path';
+import pLimit from 'p-limit';
+
+import {websites} from './websites.json';
+
+const __dirname = './public/';
+const limit = pLimit(1); // Limit concurrency to 4
+
+const runLighthouse = async (url: string) => {
+    const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless'] });
+
+    const options: Flags = {
+        logLevel: 'info',
+        output: ['html', 'json'],
+        port: chrome.port,
+        disableFullPageScreenshot: true,
+        formFactor: 'desktop',
+        screenEmulation: {
+            disabled: true,
+        },
+    };
+
+    const runnerResult: RunnerResult = await lighthouse(url, options);
+
+    const date = dayjs().format('YYYY-MM-DD');
+    const siteName = new URL(url).hostname;
+    const reportPath = path.join(__dirname, 'reports', siteName, date);
+    const livePath = path.join(__dirname, 'reports', siteName, 'live');
+
+    if (!fs.existsSync(reportPath)) {
+        fs.mkdirSync(reportPath, { recursive: true });
+    }
+
+    if (!fs.existsSync(livePath)) {
+        fs.mkdirSync(livePath, { recursive: true });
+    }
+
+    // Write HTML report
+    const reportHtml = runnerResult.report[0];
+    fs.writeFileSync(path.join(reportPath, `report.html`), reportHtml);
+    fs.writeFileSync(path.join(livePath, `report.html`), reportHtml);
+
+    // Write JSON report
+    const reportJson = runnerResult.report[1];
+    fs.writeFileSync(path.join(reportPath, `report.json`), reportJson);
+    fs.writeFileSync(path.join(livePath, `report.json`), reportJson);
+
+    console.log(`Report is done for ${runnerResult.lhr.finalDisplayedUrl}`);
+    console.log(`Performance score was ${runnerResult.lhr.categories.performance.score * 100}`);
+
+    await chrome.kill();
+};
+
+const runAllLighthouse = async () => {
+    const promises = websites.map((site) => limit(() => runLighthouse(site.url)));
+    await Promise.all(promises);
+};
+
+runAllLighthouse().catch((error) => {
+    console.error('Error running Lighthouse:', error);
+});
+
+// src/lighthouse/websites.json
+{
+    "websites": [
+        {
+            "name": "Mohannad Otaibi",
+            "url": "https://mohannadotaibi.com"
+        },
+        {
+            "name": "Zahma O La",
+            "url": "https://www.zahmaola.com/en/"
+        },
+        {
+            "name": "6 Degrees",
+            "url": "https://www.6degrees.com.sa"
+        }
+    ]
+}
+
+// src/pages/index.astro
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Report from '../components/Report.astro';
+import { websites } from '../lighthouse/websites.json';
+
+---
+<Layout title="Lighthouse Report">
+	<main>
+		<Header />
+		<div class=" grid gap-10 p-2">
+			
+			{websites.map((website) => (
+				<Report website={website} />
+			))}
+		</div>
+		
+	</main>
+</Layout>
+
+// tailwind.config.mjs
+/** @type {import('tailwindcss').Config} */
+export default {
+	content: [
+		'./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}',
+		'./node_modules/flowbite/**/*.js'
+	],
+	theme: {
+		extend: {},
+	},
+	darkMode: "class",
+
+	plugins: [
+		require('flowbite/plugin')({
+			charts: true,
+		}),
+	  
+	],
+}
+
+
+// tsconfig.json
+{
+  "extends": "astro/tsconfigs/base"
+}
