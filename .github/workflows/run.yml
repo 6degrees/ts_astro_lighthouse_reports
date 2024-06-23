@@ -16,12 +16,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install, build, and upload your site
-        uses: withastro/action@v0
-        with:
-            path: . 
+        uses: withastro/action@v2
 
   deploy:
     needs: build
@@ -32,4 +30,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
