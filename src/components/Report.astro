@@ -20,27 +20,28 @@ const finalScreenshot = audit.audits['final-screenshot'].details.data;
 
 ---
 
-<div class="outline-dotted outline-white p-3 rounded-lg outline-1 text-white">
-    <header class="mb-2 flex justify-between align-top items-start">
+<div class="outline-dotted outline-white p-3 rounded-lg outline-1 text-white hover:outline hover:bg-slate-200 hover:bg-opacity-5 transition-all">
+    <header class="mb-2 flex flex-col justify-between align-top items-center sm:items-start sm:flex-row">
         <div>
             <h2 class="text-2xl font-extrabold leading-none">{website.name}</h2>
             <a href={website.url} class="text-blue-200">{website.url}</a>
         </div>
-        <div class="text-slate-200 text-sm italic">Last fetched on {date}</div>
+        <div class="text-slate-400 text-sm italic">Last fetched on {date}</div>
     </header>
-    <div class="grid grid-cols-5 gap-2 items-center justify-center align-center">
+    <div class="grid grid-cols-1 gap-1 sm:gap-2 sm:grid-cols-5 items-center justify-center align-center">
+        <!-- lets print the audit.audit.final-screenshot -->
+        <div class="max-h-full rounded-md overflow-hidden sm:order-2 text-center center justify-center items-center"><img class="h-full inline-block" src={finalScreenshot} /></div>
         {
             audits.map((audit) => {
                 console.log(audit.id);
                 return (
-                    <div>
+                    <a href={`/reports/${siteName}/live/report.html#${audit.id}`} class="sm:order-1">
                         <Chart key={`${audit.id}-${siteName}`} title={audit.title} value={audit.score} />
-                    </div>
+                    </a>
                 );
             })
         }
-        <!-- lets print the audit.audit.final-screenshot -->
-         <div class="h-[200px] text-center center justify-center items-center"><img class="h-full inline-block" src={finalScreenshot} /></div>
+        
     </div>
     <div class="text-center mt-4">
         <a href={`/reports/${siteName}/live/report.html`} class="text-blue-200">View full report</a>
