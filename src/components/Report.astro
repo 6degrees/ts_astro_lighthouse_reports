@@ -1,49 +1,139 @@
 ---
-//prop of website
+import type { Website, LighthouseAudit } from '../types';
 import dayjs from "dayjs";
 import Chart from "./Chart.astro";
+import { getHistoricalReports } from '../utils/reportHistory';
+
+interface Props {
+    website: Website;
+}
+
 const { website } = Astro.props;
 const siteName = new URL(website.url).hostname;
-const audit = await import(`../../public/reports/${siteName}/live/report.json`);
-const date = dayjs(audit.fetchTime).format("YYYY-MMMM-DD");
+const audit = await import(`../../public/reports/${siteName}/live/report.json`) as { default: LighthouseAudit };
+const date = dayjs(audit.default.fetchTime).format("YYYY-MMMM-DD");
+const historicalReports = await getHistoricalReports(siteName);
 
-// convert audit.categories object to an array
-const audits = Object.keys(audit.categories).map((key) => {
-    return {
-        key,
-        ...audit.categories[key],
-    };
-});
+const audits = Object.entries(audit.default.categories).map(([key, value]) => ({
+    key,
+    id: value.id,
+    title: value.title,
+    score: value.score,
+}));
 
-const finalScreenshot = audit.audits['final-screenshot'].details.data;
-
-
+const finalScreenshot = audit.default.audits['final-screenshot']?.details?.data || '';
 ---
 
-<div class="outline-dotted outline-white p-3 rounded-lg outline-1 text-white hover:outline hover:bg-slate-200 hover:bg-opacity-5 transition-all">
+<article class="outline-dotted outline-white p-3 rounded-lg outline-1 text-white hover:outline hover:bg-slate-200 hover:bg-opacity-5 transition-all">
     <header class="mb-2 flex flex-col justify-between align-top items-center sm:items-start sm:flex-row">
         <div>
             <h2 class="text-2xl font-extrabold leading-none">{website.name}</h2>
-            <a href={website.url} class="text-blue-200">{website.url}</a>
+            <a 
+                href={website.url} 
+                class="text-blue-200 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                {website.url}
+            </a>
         </div>
-        <div class="text-slate-400 text-sm italic">Last fetched on {date}</div>
+        <div class="flex flex-col items-end">
+            <time 
+                datetime={date} 
+                class="text-slate-400 text-sm italic"
+            >
+                Last fetched on {date}
+            </time>
+            {historicalReports.length > 0 && (
+                <button
+                    class="text-blue-200 text-sm hover:underline cursor-pointer"
+                    data-history-trigger={siteName}
+                >
+                    View {historicalReports.length} previous versions
+                </button>
+            )}
+            
+            <!-- History Popup -->
+            <div
+                id={`history-${siteName}`}
+                class="hidden absolute bg-slate-800 rounded-lg p-4 shadow-lg z-50 mt-2 max-h-96 overflow-y-auto"
+                role="dialog"
+                aria-label="Historical reports"
+            >
+                <h3 class="text-lg font-bold mb-2">Historical Reports</h3>
+                <div class="space-y-2">
+                    {historicalReports.map((report) => (
+                        <a
+                            href={report.path}
+                            class="block text-blue-200 hover:underline py-1"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            {report.formattedDate}
+                        </a>
+                    ))}
+                </div>
+            </div>
+        </div>
     </header>
-    <div class="grid grid-cols-1 gap-1 sm:gap-2 sm:grid-cols-5 items-center justify-center align-center">
-        <!-- lets print the audit.audit.final-screenshot -->
-        <div class="max-h-full rounded-md overflow-hidden sm:order-2 text-center center justify-center items-center"><img class="h-full inline-block" src={finalScreenshot} /></div>
-        {
-            audits.map((audit) => {
-                console.log(audit.id);
-                return (
-                    <a href={`/reports/${siteName}/live/report.html#${audit.id}`} class="sm:order-1">
-                        <Chart key={`${audit.id}-${siteName}`} title={audit.title} value={audit.score} />
-                    </a>
-                );
-            })
-        }
+
+    <div class="grid grid-cols-1 gap-1 sm:gap-2 sm:grid-cols-5 items-center justify-center">
+        <div class="max-h-full rounded-md overflow-hidden sm:order-2 text-center">
+            <img 
+                class="h-full inline-block" 
+                src={finalScreenshot} 
+                alt={`Screenshot of ${website.name}`}
+                loading="lazy"
+            />
+        </div>
         
+        {audits.map((audit) => (
+            <a 
+                href={`/reports/${siteName}/live/report.html#${audit.id}`}
+                class="sm:order-1 hover:opacity-90 transition-opacity"
+                title={`View detailed ${audit.title} report`}
+            >
+                <Chart 
+                    key={`${audit.id}-${siteName}`} 
+                    title={audit.title} 
+                    value={audit.score} 
+                />
+            </a>
+        ))}
     </div>
+
     <div class="text-center mt-4">
-        <a href={`/reports/${siteName}/live/report.html`} class="text-blue-200">View full report</a>
+        <a 
+            href={`/reports/${siteName}/live/report.html`}
+            class="text-blue-200 hover:underline"
+        >
+            View full report
+        </a>
     </div>
-</div>
+</article>
+
+<script>
+    // Add popup functionality
+    document.addEventListener('DOMContentLoaded', () => {
+        const triggers = document.querySelectorAll('[data-history-trigger]');
+        
+        triggers.forEach(trigger => {
+            const siteName = trigger.getAttribute('data-history-trigger');
+            const popup = document.getElementById(`history-${siteName}`);
+            
+            if (!popup) return;
+            
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                popup.classList.toggle('hidden');
+            });
+            
+            // Close popup when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!popup.contains(e.target as Node) && e.target !== trigger) {
+                    popup.classList.add('hidden');
+                }
+            });
+        });
+    });
+</script>

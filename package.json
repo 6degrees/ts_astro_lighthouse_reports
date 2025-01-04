@@ -8,7 +8,7 @@
     "build": "pnpm create:report && astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "create:report": "tsx src/lighthouse/runner.ts"
+    "create:report": "rimraf ./public/reports && tsx --tsconfig tsconfig.json src/lighthouse/runner.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.7.0",
@@ -18,12 +18,14 @@
     "chrome-launcher": "^1.1.2",
     "dayjs": "^1.11.13",
     "flowbite": "^2.5.2",
+    "globby": "^14.0.2",
     "lighthouse": "^12.3.0",
     "p-limit": "^5.0.0",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "rimraf": "^5.0.5"
   },
   "packageManager": "pnpm@9.10.0+sha512.73a29afa36a0d092ece5271de5177ecbf8318d454ecd701343131b8ebc0c1a91c487da46ab77c8e596d6acf1461e3594ced4becedf8921b074fbd8653ed7051c"
 }
