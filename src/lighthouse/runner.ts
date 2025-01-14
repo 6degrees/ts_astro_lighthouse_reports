@@ -8,23 +8,17 @@ import pLimit from 'p-limit';
 import {websites} from './websites.json';
 
 const __dirname = './public/';
-const limit = pLimit(4); // Limit concurrency to 4
+const limit = pLimit(1); // Limit concurrency to 4
 
 const runLighthouse = async (url: string) => {
     const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless'] });
 
     const options: Flags = {
-        logLevel: 'verbose',
+        logLevel: process.env.NODE_ENV === 'production' ? 'error' : 'warn',
         output: ['html', 'json'],
         port: chrome.port,
         disableFullPageScreenshot: true,
         formFactor: 'desktop',
-        throttling: {
-            rttMs: 40,
-            throughputKbps: 10240,
-            cpuSlowdownMultiplier: 1,
-        },
-        throttlingMethod: 'devtools',
         screenEmulation: {
             disabled: true,
         },
