@@ -3,12 +3,14 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "cross-env NODE_ENV=development astro dev",
     "start": "astro dev",
-    "build": "pnpm create:report && astro check && astro build",
+    "build": "pnpm build:lighthouse && pnpm create:report && astro check && astro build",
+    "build:lighthouse": "tsx src/lighthouse/build.ts",
     "preview": "astro preview",
     "astro": "astro",
-    "create:report": "rimraf ./public/reports && tsx --tsconfig tsconfig.json src/lighthouse/runner.ts"
+    "create:report": "pnpm build:lighthouse && cross-env NODE_ENV=production rimraf ./public/reports && node src/lighthouse/runner.ts",
+    "create:report:dev": "cross-env NODE_ENV=development rimraf ./public/reports && tsx src/lighthouse/runner.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.7.0",
@@ -21,11 +23,15 @@
     "globby": "^14.0.2",
     "lighthouse": "^12.3.0",
     "p-limit": "^5.0.0",
+    "rimraf": "^5.0.5",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
-    "rimraf": "^5.0.5"
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "esbuild": "^0.20.2"
   },
   "packageManager": "pnpm@9.10.0+sha512.73a29afa36a0d092ece5271de5177ecbf8318d454ecd701343131b8ebc0c1a91c487da46ab77c8e596d6acf1461e3594ced4becedf8921b074fbd8653ed7051c"
 }
