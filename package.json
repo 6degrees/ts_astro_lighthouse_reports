@@ -3,14 +3,12 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development astro dev",
+    "dev": "astro dev",
     "start": "astro dev",
-    "build": "pnpm build:lighthouse && pnpm create:report && astro check && astro build",
-    "build:lighthouse": "tsx src/lighthouse/build.ts",
+    "build": "pnpm create:report && astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "create:report": "pnpm build:lighthouse && cross-env NODE_ENV=production rimraf ./public/reports && node src/lighthouse/runner.ts",
-    "create:report:dev": "cross-env NODE_ENV=development rimraf ./public/reports && tsx src/lighthouse/runner.ts"
+    "create:report": "tsx src/lighthouse/runner.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.7.0",
