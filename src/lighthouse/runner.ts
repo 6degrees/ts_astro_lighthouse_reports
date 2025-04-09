@@ -20,7 +20,15 @@ const runLighthouse = async (url: string) => {
         disableFullPageScreenshot: true,
         formFactor: 'desktop',
         screenEmulation: {
-            disabled: true,
+            mobile: false,
+            width: 2560,
+            height: 1440,
+            disabled: false,
+          },
+      
+        throttling: {
+            rttMs: 10,
+            throughputKbps: 102400,
         },
     };
 
